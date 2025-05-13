@@ -1,6 +1,5 @@
 {
   "name": "api-rest-node-express",
-  "packageManager": "yarn@4.9.1",
   "version": "0.0.1",
   "description": "First Rest API with JS, NodeJS and Express",
   "main": "index.js",
