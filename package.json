@@ -1,0 +1,22 @@
+{
+  "name": "api-rest-node-express",
+  "packageManager": "yarn@4.9.1",
+  "version": "0.0.1",
+  "description": "First Rest API with JS, NodeJS and Express",
+  "main": "index.js",
+  "author": {
+    "name": "Diego Menendez Fernandez"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
