@@ -1,10 +1,14 @@
 
 const express = require('express'); //importar express
+const path = require('path');
+
 const cors = require('cors');
 const app = express(); //inizialicar express
 
 //permitir conexiones externas
 app.use(cors());
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 
 //poder recibir json

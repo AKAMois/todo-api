@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ToDo List</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f9f9f9;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      background-color: #28a745;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: white;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .delete-btn {
+      background-color: #dc3545;
+      border: none;
+      color: white;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lista de Tareas</h1>
+  <form id="todo-form">
+    <input type="text" id="todo-input" placeholder="Nueva tarea..." required />
+    <button type="submit">Agregar</button>
+  </form>
+  <ul id="todo-list"></ul>
+
+  <script>
+  const API_URL = '/api/task';
+
+    async function fetchTodos() {
+      const res = await fetch(API_URL);
+      const todos = await res.json();
+      const list = document.getElementById('todo-list');
+      list.innerHTML = '';
+      todos.forEach(todo => {
+        const li = document.createElement('li');
+        li.textContent = todo.title;
+        const btn = document.createElement('button');
+        btn.textContent = 'Eliminar';
+        btn.className = 'delete-btn';
+        btn.onclick = () => deleteTodo(todo._id);
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    async function addTodo(e) {
+      e.preventDefault();
+      const input = document.getElementById('todo-input');
+      const title = input.value.trim();
+      if (!title) return;
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      input.value = '';
+      fetchTodos();
+    }
+
+    async function deleteTodo(id) {
+      await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE'
+      });
+      fetchTodos();
+    }
+
+    document.getElementById('todo-form').addEventListener('submit', addTodo);
+    fetchTodos();
+  </script>
+</body>
+</html>
+
