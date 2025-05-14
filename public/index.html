@@ -2,113 +2,126 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ToDo List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Todo App</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f9f9f9;
-      padding: 2rem;
-      max-width: 600px;
-      margin: auto;
-    }
-    h1 {
-      text-align: center;
-    }
-    form {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    input[type="text"] {
-      flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      border: none;
-      background-color: #28a745;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      background: white;
-      margin-bottom: 0.5rem;
-      padding: 0.5rem;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .delete-btn {
-      background-color: #dc3545;
-      border: none;
-      color: white;
-      padding: 0.3rem 0.6rem;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+    input, button, label { display: block; margin: 10px 0; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 10px; border-bottom: 1px solid #ccc; }
+    .completed { text-decoration: line-through; }
   </style>
 </head>
 <body>
-  <h1>Lista de Tareas</h1>
+
+  <h1>📋 Lista de Tareas</h1>
+
   <form id="todo-form">
-    <input type="text" id="todo-input" placeholder="Nueva tarea..." required />
-    <button type="submit">Agregar</button>
+    <input type="text" id="new-title" placeholder="Título" required />
+    <input type="text" id="new-description" placeholder="Descripción" required />
+    <label>
+      <input type="checkbox" id="new-completed" /> Completada
+    </label>
+    <button type="submit">Agregar tarea</button>
   </form>
+
   <ul id="todo-list"></ul>
 
+  <div id="edit-form" style="display: none;">
+    <h2>✏️ Editar Tarea</h2>
+    <input type="text" id="edit-title" placeholder="Título" required />
+    <input type="text" id="edit-description" placeholder="Descripción" required />
+    <label>
+      <input type="checkbox" id="edit-completed" /> Completada
+    </label>
+    <button onclick="submitEdit()">Guardar cambios</button>
+    <button onclick="cancelEdit()">Cancelar</button>
+  </div>
+
   <script>
-  const API_URL = '/api/task';
+    const API_URL = '/api/task';
+    let currentEditId = null;
 
-    async function fetchTodos() {
-      const res = await fetch(API_URL);
-      const todos = await res.json();
-      const list = document.getElementById('todo-list');
-      list.innerHTML = '';
-      todos.forEach(todo => {
-        const li = document.createElement('li');
-        li.textContent = todo.title;
-        const btn = document.createElement('button');
-        btn.textContent = 'Eliminar';
-        btn.className = 'delete-btn';
-        btn.onclick = () => deleteTodo(todo._id);
-        li.appendChild(btn);
-        list.appendChild(li);
-      });
-    }
-
-    async function addTodo(e) {
+    document.getElementById('todo-form').addEventListener('submit', function(e) {
       e.preventDefault();
-      const input = document.getElementById('todo-input');
-      const title = input.value.trim();
-      if (!title) return;
-      await fetch(API_URL, {
+      const title = document.getElementById('new-title').value;
+      const description = document.getElementById('new-description').value;
+      const completed = document.getElementById('new-completed').checked;
+
+      fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title })
+        body: JSON.stringify({ title, description, completed })
+      })
+      .then(res => res.json())
+      .then(() => {
+        document.getElementById('todo-form').reset();
+        fetchTodos();
       });
-      input.value = '';
-      fetchTodos();
+    });
+
+    function fetchTodos() {
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          const list = document.getElementById('todo-list');
+          list.innerHTML = '';
+          data.forEach(task => {
+            const item = document.createElement('li');
+            item.innerHTML = `
+              <strong${task.completed ? ' class="completed"' : ''}>${task.title}</strong>
+              <br>${task.description}
+              <br><small>ID: ${task._id}</small>
+              <br>
+              <button onclick="editTask('${task._id}', \`${task.title}\`, \`${task.description}\`, ${task.completed})">Editar</button>
+              <button onclick="deleteTodo('${task._id}')">Eliminar</button>
+            `;
+            list.appendChild(item);
+          });
+        });
     }
 
-    async function deleteTodo(id) {
-      await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE'
-      });
-      fetchTodos();
+    function deleteTodo(id) {
+      fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+        .then(() => fetchTodos());
     }
 
-    document.getElementById('todo-form').addEventListener('submit', addTodo);
+    function editTask(id, title, description, completed) {
+      document.getElementById('edit-title').value = title;
+      document.getElementById('edit-description').value = description;
+      document.getElementById('edit-completed').checked = completed;
+      document.getElementById('edit-form').style.display = 'block';
+      currentEditId = id;
+    }
+
+    function submitEdit() {
+      const updatedTitle = document.getElementById('edit-title').value;
+      const updatedDescription = document.getElementById('edit-description').value;
+      const updatedCompleted = document.getElementById('edit-completed').checked;
+
+      fetch(`${API_URL}/${currentEditId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: updatedTitle,
+          description: updatedDescription,
+          completed: updatedCompleted
+        })
+      })
+      .then(res => res.json())
+      .then(() => {
+        document.getElementById('edit-form').style.display = 'none';
+        fetchTodos();
+      });
+    }
+
+    function cancelEdit() {
+      document.getElementById('edit-form').style.display = 'none';
+      currentEditId = null;
+    }
+
     fetchTodos();
   </script>
+
 </body>
 </html>
-
